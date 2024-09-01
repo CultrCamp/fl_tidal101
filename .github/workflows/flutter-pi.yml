@@ -21,39 +21,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Run build for all platform
+      - name: Run build for rpi3 arm
         run: |
           flutter clean
           flutter pub get
-          flutterpi_tool build --release
+          flutterpi_tool build --release --cpu=pi3 --arch=arm
           version=${{ github.ref_name }}
-          zip -r fl_tidal101_${version}_all.zip ./build/flutter_assets
+          zip -r fl_tidal101_${version}_pi3_arm32.zip ./build/flutter_assets
           rm -rf ./build/flutter_assets
 
-      - name: Run build for rpi3
+      - name: Run build for rpi3 arm64
         run: |
           flutter clean
           flutter pub get
-          flutterpi_tool build --release --cpu=pi3
+          flutterpi_tool build --release --cpu=pi3 --arch=arm64
           version=${{ github.ref_name }}
-          zip -r fl_tidal101_${version}_pi3.zip ./build/flutter_assets
+          zip -r fl_tidal101_${version}_pi3_arm64.zip ./build/flutter_assets
           rm -rf ./build/flutter_assets
         
       - name: Run build for rpi4
         run: |
           flutter clean
           flutter pub get
-          flutterpi_tool build --release --cpu=pi4
+          flutterpi_tool build --release --cpu=pi4 --arch=arm
           version=${{ github.ref_name }}
-          zip -r fl_tidal101_${version}_pi4.zip ./build/flutter_assets
+          zip -r fl_tidal101_${version}_pi4_arm32.zip ./build/flutter_assets
+          rm -rf ./build/flutter_assets
+
+      - name: Run build for rpi4
+        run: |
+          flutter clean
+          flutter pub get
+          flutterpi_tool build --release --cpu=pi4 --arch=arm64
+          version=${{ github.ref_name }}
+          zip -r fl_tidal101_${version}_pi4_arm64.zip ./build/flutter_assets
           rm -rf ./build/flutter_assets
           
       - name: Upload zip files to release
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
-            fl_tidal101_${{ github.ref_name }}_all.zip
-            fl_tidal101_${{ github.ref_name }}_pi3.zip
-            fl_tidal101_${{ github.ref_name }}_pi4.zip
+            fl_tidal101_${{ github.ref_name }}_pi3_arm32.zip
+            fl_tidal101_${{ github.ref_name }}_pi3_arm64.zip
+            fl_tidal101_${{ github.ref_name }}_pi4_arm32.zip
+            fl_tidal101_${{ github.ref_name }}_pi4_arm64.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
