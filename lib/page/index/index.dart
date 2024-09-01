@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_tidal101/page/index/index_controller.dart';
+import 'package:fl_tidal101/widget/frequecy_axis.dart';
 import 'package:fl_tidal101/widget/spectrogram.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -50,44 +51,64 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-      body: Stack(
-        children: [
-          Center(
-            // Center is a layout widget. It takes a single child and positions it
-            // in the middle of the parent.
-            child: Container(
-                color: Colors.black,
-                child: Obx(() => Spectrogram(
-                    data: controller.buffer.value,
-                    intensityColorMap: controller.intensityColorMaps[
-                        controller.intensityColorMapIndex.value],
-                    debug: false))),
-          ),
-          Container(
-            color: const Color(0xAAFFFFFF),
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Obx(() => Text(
-                    "${controller.currentFps.value.toString().padLeft(3, '0')}fps")),
-                SizedBox.fromSize(size: const Size(50, 50)),
-                Obx(() => Text(
-                    "total: ${controller.totalDuration.toStringAsFixed(2)} "
-                    "current: ${controller.currentDuration.toStringAsFixed(2)} "
-                    "samplates: ${controller.samplesPerSecond} "
-                    "bit: ${controller.bitPerSample} "
-                    "buckets: ${IndexController.buckets} "
-                    "resolution: ${controller.samplesPerSecond / IndexController.buckets}")),
-              ],
+      body: LayoutBuilder(builder: (ctx, constraints) {
+        return Stack(
+          children: [
+            Center(
+              // Center is a layout widget. It takes a single child and positions it
+              // in the middle of the parent.
+              child: Container(
+                  color: Colors.black,
+                  child: Obx(() => Column(
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          SizedBox.fromSize(
+                              size: Size.fromHeight(
+                                  constraints.maxHeight * 0.925),
+                              child: Spectrogram(
+                                  data: controller.buffer.value,
+                                  intensityColorMap: controller
+                                          .intensityColorMaps[
+                                      controller.intensityColorMapIndex.value],
+                                  debug: false)),
+                          SizedBox.fromSize(
+                            size: const Size(10, 10),
+                          ),
+                          FrequencyAxis(
+                              maxFrequency: controller.samplesPerSecond.value ~/
+                                  2) //  Nyquist
+                        ],
+                      ))),
             ),
-          )
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+            Container(
+              color: const Color(0xAAFFFFFF),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Obx(() => Text(
+                      "${controller.currentFps.value.toString().padLeft(3, '0')}fps")),
+                  SizedBox.fromSize(size: const Size(50, 50)),
+                  Obx(() => Text(
+                      "total: ${controller.totalDuration.toStringAsFixed(2)} "
+                      "current: ${controller.currentDuration.toStringAsFixed(2)} "
+                      "samplates: ${controller.samplesPerSecond} "
+                      "bit: ${controller.bitPerSample} "
+                      "buckets: ${IndexController.buckets} "
+                      "resolution: ${controller.samplesPerSecond / IndexController.buckets}")),
+                  const Spacer(),
+                  TextButton(
+                      onPressed: _incrementCounter, child: const Text("Start"))
+                ],
+              ),
+            )
+          ],
+        );
+      }),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: _incrementCounter,
+      //   tooltip: 'Increment',
+      //   child: const Icon(Icons.add),
+      // ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
