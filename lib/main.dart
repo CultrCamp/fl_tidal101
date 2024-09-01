@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:fl_tidal101/utils/RingBuffer.dart';
 import 'package:fl_tidal101/widgets/spectrogram.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 void main() {
   runApp(const MyApp());
@@ -58,40 +60,58 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  Timer? _spectrogramTimer;
-  SpectrogramWidget? _spectrogramWidget;
+class _MyHomePageState extends State<MyHomePage>
+    with SingleTickerProviderStateMixin {
+  Ticker? _ticker;
+  Timer? _sampleDataTimer;
+  int _fps = 0;
+  final RingBuffer<List<double>> _buffer = RingBuffer(60);
+  final int _numFreq = 441;
+  final int fps = 10;
+  final _random = Random();
+
+  int get updateMillis => 1000 ~/ fps;
 
   void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    setState(() {});
   }
 
-  Widget spectrogram() {
-    _spectrogramWidget ??= SpectrogramWidget(
-        data: const [], numFrequencies: 100, numTimeSteps: 60, debug: true);
-    if (_spectrogramTimer == null || _spectrogramTimer?.isActive == false) {
-      _spectrogramTimer = Timer.periodic(const Duration(seconds: 3), (t) {
-        final random = Random();
-        return _spectrogramWidget?.data.add(List<double>.generate(
-            100, (_) => 0 + random.nextDouble() * (1.0 - 0)));
-      });
+  int millisToFps(int millis) {
+    if (millis <= 0) {
+      return 0;
     }
-    return widget;
+    return 1000 ~/ millis;
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {});
+    _ticker = Ticker((elapsed) {
+      int millis = elapsed.inMicroseconds;
+      int fps = millisToFps(millis);
+      debugPrint("update frame(e: ${millis}ms, $fps)");
+      setState(() {
+        _fps = fps;
+      });
+    })
+      ..start();
+    _sampleDataTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      setState(() {
+        debugPrint("update data");
+        _buffer.add(List<double>.generate(
+            _numFreq, (_) => 0 + _random.nextDouble() * (1.0 - 0)));
+      });
+    });
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
+    _ticker?.dispose();
+    _sampleDataTimer?.cancel();
     super.dispose();
-    _spectrogramTimer?.cancel();
   }
 
   @override
@@ -103,47 +123,15 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            SizedBox.fromSize(
-              size: const Size.fromHeight(400),
-              child: spectrogram(),
-            )
-          ],
-        ),
+      body: Stack(
+        children: [
+          Center(
+              // Center is a layout widget. It takes a single child and positions it
+              // in the middle of the parent.
+              child: SpectrogramWidget(
+                  data: _buffer, numFrequencies: _numFreq, debug: true)),
+          Text("${_fps}fps")
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
