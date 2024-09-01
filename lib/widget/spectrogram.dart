@@ -6,14 +6,10 @@ import 'package:flutter/material.dart';
 class Spectrogram extends StatelessWidget {
   final Map<double, Color> intensityColorMap;
   final RingBuffer<List<double>> data;
-  final int horizontalCount;
-  final int verticalCount;
   final bool debug;
 
   const Spectrogram(
       {required this.data,
-      required this.horizontalCount,
-      this.verticalCount = 120,
       this.debug = false,
       required this.intensityColorMap,
       super.key});
@@ -22,8 +18,7 @@ class Spectrogram extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(double.infinity, double.infinity),
-      painter: SpectrogramPainter(data, horizontalCount, verticalCount,
-          onFramePainted: () {
+      painter: SpectrogramPainter(data, onFramePainted: () {
         if (debug) {
           debugPrint("repaint");
         }
@@ -34,8 +29,6 @@ class Spectrogram extends StatelessWidget {
 
 class SpectrogramPainter extends CustomPainter {
   final RingBuffer<List<double>> data;
-  final int horizontalCount;
-  final int verticalCount;
   final VoidCallback onFramePainted;
   final bool debug;
 
@@ -43,9 +36,7 @@ class SpectrogramPainter extends CustomPainter {
   final Map<double, Color> intensityColorMap;
 
   SpectrogramPainter(
-    this.data,
-    this.horizontalCount,
-    this.verticalCount, {
+    this.data, {
     required this.onFramePainted,
     required this.intensityColorMap,
     this.debug = false,
@@ -53,23 +44,18 @@ class SpectrogramPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paintBg = Paint()..color = Colors.black; // 배경 색상 설정
-
-    // 전체 화면 크기의 사각형을 만듭니다.
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.drawRect(rect, paintBg);
+    // final paintBg = Paint()..color = Colors.black; // 배경 색상 설정
+    //
+    // // 전체 화면 크기의 사각형을 만듭니다.
+    // final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    // canvas.drawRect(rect, paintBg);
 
     final paint = Paint();
-    final cellWidth = size.width / horizontalCount;
-    final cellHeight = size.height / verticalCount;
-    if (debug) {
-      debugPrint("CANVAS: width: ${size.width} height: ${size.height}");
-      debugPrint("CELL: width: $cellWidth height: $cellHeight");
-    }
+    final cellWidth = size.width / data.capacity;
 
     for (final (int index, List<double> item) in data.indexed) {
-      for (int j = 0; j < item.length; j++) {
-        double intensity = item[j];
+      final cellHeight = size.height / item.length;
+      for (final (int j, double intensity) in item.indexed) {
         paint.color = getColorForIntensity(intensity); // 색상 결정
 
         final rect = Rect.fromLTWH(

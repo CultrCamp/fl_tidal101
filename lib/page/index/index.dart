@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:fl_tidal101/page/index/index_controller.dart';
 import 'package:fl_tidal101/widget/spectrogram.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +14,12 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
   IndexController controller = Get.find();
   Ticker? _ticker;
 
-  void _incrementCounter() {
+  void _incrementCounter() async {
     debugPrint("_numFreq: ${controller.spectrogramHorizontalCount}");
-    setState(() {});
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      controller.doSTFT(result.files.single.path!);
+    }
   }
 
   @override
@@ -49,13 +53,20 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
               // in the middle of the parent.
               child: Obx(() => Spectrogram(
                   data: controller.buffer.value,
-                  horizontalCount: controller.spectrogramHorizontalCount,
                   intensityColorMap: controller.intensityColorMaps[
                       controller.intensityColorMapIndex.value],
                   debug: false))),
           Container(
             color: const Color(0xAAFFFFFF),
-            child: Obx(() => Text("${controller.currentFps}fps")),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Obx(() => Text("${controller.currentFps}fps")),
+                SizedBox.fromSize(size: const Size(50, 50)),
+                Obx(() => Text(
+                    "total: ${controller.totalDuration} current: ${controller.currentDuration}"))
+              ],
+            ),
           )
         ],
       ),
