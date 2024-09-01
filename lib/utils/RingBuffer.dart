@@ -1,4 +1,6 @@
-class RingBuffer<T> with Iterable<T> {
+import 'package:flutter/cupertino.dart';
+
+class RingBuffer<T> extends ChangeNotifier with Iterable<T> {
   final List<T?> _buffer;
   int _writeIndex = 0;
   int _readIndex = 0;
@@ -24,6 +26,7 @@ class RingBuffer<T> with Iterable<T> {
     } else {
       _size++;
     }
+    notifyListeners();
   }
 
   T? get() {
@@ -46,6 +49,16 @@ class RingBuffer<T> with Iterable<T> {
   String toString() {
     return _buffer.toString();
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RingBuffer &&
+          runtimeType == other.runtimeType &&
+          _writeIndex == other._writeIndex;
+
+  @override
+  int get hashCode => _writeIndex.hashCode;
 }
 
 class _RingBufferIterator<T> implements Iterator<T> {
