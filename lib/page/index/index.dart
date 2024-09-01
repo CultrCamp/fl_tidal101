@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:fl_tidal101/page/index/index_controller.dart';
 import 'package:fl_tidal101/widget/spectrogram.dart';
 import 'package:flutter/material.dart';
@@ -16,11 +15,11 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
 
   void _incrementCounter() async {
     debugPrint("_numFreq: ${controller.spectrogramHorizontalCount}");
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      // controller.doSTFT(result.files.single.path!);
-      controller.doSTFT("/root/sample1.wav");
-    }
+    // FilePickerResult? result = await FilePicker.platform.pickFiles();
+    // if (result != null) {
+    // controller.doSTFT(result.files.single.path!);
+    controller.doSTFT("/root/sample1.wav");
+    // }
   }
 
   @override
