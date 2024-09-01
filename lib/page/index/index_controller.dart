@@ -73,6 +73,7 @@ class IndexController extends GetxController {
 
   void doSTFT(String filePath) async {
     final wav = await Wav.readFile(filePath);
+    debugPrint("wav file loaded");
     var audio = _normalizeRmsVolume(wav.toMono(), 0.05).toList();
     totalDuration.value = wav.duration;
     bitPerSample.value = wav.format.bitsPerSample;
@@ -84,6 +85,7 @@ class IndexController extends GetxController {
     final chunkSize = (_samplesPerSecond * chunkLengthInSec).toInt();
 
     if (_fftIsolate != null) {
+      debugPrint("isolate exists. kill it");
       _cleanupIsolate();
     }
     _receivePort = ReceivePort();
@@ -95,6 +97,7 @@ class IndexController extends GetxController {
       chunkLengthInSec,
       totalDuration.value
     ]);
+    debugPrint("fft started");
 
     _receivePort!.listen((message) {
       if (message is List<double>) {
