@@ -1,5 +1,7 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:fl_tidal101/page/index/index_controller.dart';
 import 'package:fl_tidal101/widget/spectrogram.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -14,12 +16,14 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
   Ticker? _ticker;
 
   void _incrementCounter() async {
-    debugPrint("_numFreq: ${controller.spectrogramHorizontalCount}");
-    // FilePickerResult? result = await FilePicker.platform.pickFiles();
-    // if (result != null) {
-    // controller.doSTFT(result.files.single.path!);
-    controller.doSTFT("/root/sample1.wav");
-    // }
+    if (kDebugMode) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      if (result != null) {
+        controller.doSTFT(result.files.single.path!);
+      } else {
+        controller.doSTFT("/root/sample1.wav");
+      }
+    }
   }
 
   @override
@@ -64,13 +68,16 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
             child: Row(
               mainAxisSize: MainAxisSize.max,
               children: [
-                Obx(() => Text("${controller.currentFps}fps")),
+                Obx(() => Text(
+                    "${controller.currentFps.value.toString().padLeft(3, '0')}fps")),
                 SizedBox.fromSize(size: const Size(50, 50)),
                 Obx(() => Text(
-                    "total: ${controller.totalDuration.toStringAsFixed(2)} current: ${controller.currentDuration.toStringAsFixed(2)}")),
-                SizedBox.fromSize(size: const Size(50, 50)),
-                Obx(() => Text(
-                    "samplates: ${controller.samplesPerSecond} bit: ${controller.bitPerSample} buckets: ${IndexController.buckets} resolution: ${controller.samplesPerSecond / IndexController.buckets}"))
+                    "total: ${controller.totalDuration.toStringAsFixed(2)} "
+                    "current: ${controller.currentDuration.toStringAsFixed(2)} "
+                    "samplates: ${controller.samplesPerSecond} "
+                    "bit: ${controller.bitPerSample} "
+                    "buckets: ${IndexController.buckets} "
+                    "resolution: ${controller.samplesPerSecond / IndexController.buckets}")),
               ],
             ),
           )

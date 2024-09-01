@@ -23,14 +23,13 @@ class IndexController extends GetxController {
   int _lastTick = 0;
   RxInt intensityColorMapIndex = 0.obs;
   final Rx<RingBuffer<List<double>>> buffer = Rx(RingBuffer(120));
-  final int spectrogramHorizontalCount = 192;
-  final int spectrogramVerticalCount = 120;
   final int fps = 10;
   final int bufferSizeInSec = 30;
   final _random = Random();
 
   static const int chunkSize = 2048;
   static int buckets = 480;
+  static const int targetResolutionInHz = 250;
   static STFT? _stft;
   final totalDuration = 0.0.obs;
   final currentDuration = 0.0.obs;
@@ -79,7 +78,7 @@ class IndexController extends GetxController {
     bitPerSample.value = wav.format.bitsPerSample;
     final _samplesPerSecond = wav.samplesPerSecond;
     samplesPerSecond.value = _samplesPerSecond;
-    buckets = _samplesPerSecond ~/ 100;
+    buckets = _samplesPerSecond ~/ targetResolutionInHz;
     const chunkLengthInSec = 0.05;
     buffer.value.capacity = bufferSizeInSec ~/ chunkLengthInSec;
     final chunkSize = (_samplesPerSecond * chunkLengthInSec).toInt();

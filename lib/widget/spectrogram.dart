@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:fl_tidal101/utils/RingBuffer.dart';
 import 'package:flutter/material.dart';
 
@@ -33,33 +35,40 @@ class SpectrogramPainter extends CustomPainter {
   // 색상 매핑을 위한 캐시
   final List<double> sortedKeys;
   final List<Color> colors;
+  final Map<double, Color> intensityColorMap;
 
   SpectrogramPainter(
     this.data, {
     required this.onFramePainted,
-    required Map<double, Color> intensityColorMap,
+    required this.intensityColorMap,
     this.debug = false,
   })  : sortedKeys = intensityColorMap.keys.toList()..sort(),
         colors = intensityColorMap.values.toList();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final cellHeight = size.height / data.capacity;
+    final paint = Paint()..style = PaintingStyle.fill;
+    final boxHeight = size.height / data.capacity;
 
-    for (final (int index, List<double> item) in data.indexed) {
-      final cellWidth = size.width / item.length;
+    for (final (int i, List<double> item) in data.indexed) {
+      final boxWidth = size.width / item.length;
       for (final (int j, double intensity) in item.indexed) {
         paint.color = getColorForIntensity(intensity); // 색상 결정
 
-        final rect = Rect.fromLTWH(
-          j * cellWidth,
-          (index + 1) * cellHeight,
-          cellWidth,
-          cellHeight,
+        // 각 상자의 좌표를 계산 (아래쪽이 최신 데이터가 되도록)
+        final bottomLeft = Offset(j * boxWidth, i * boxHeight);
+        final topLeft = Offset(j * boxWidth, i * boxHeight + boxHeight);
+        final topRight = Offset(j * boxWidth + boxWidth, i * boxHeight + boxHeight);
+        final bottomRight = Offset(j * boxWidth + boxWidth, i * boxHeight);
+
+        // 사각형 그리기
+        final vertices = Vertices(
+          VertexMode.triangleFan,
+          [bottomLeft, bottomRight, topRight, topLeft],
+          colors: [paint.color, paint.color, paint.color, paint.color],
         );
 
-        canvas.drawRect(rect, paint);
+        canvas.drawVertices(vertices, BlendMode.src, paint);
       }
     }
 
