@@ -66,7 +66,7 @@ class IndexController extends GetxController {
 
   void doSTFT(String filePath) async {
     final wav = await Wav.readFile(filePath);
-    var audio = _normalizeRmsVolume(wav.toMono(), 0.1).toList();
+    var audio = _normalizeRmsVolume(wav.toMono(), 0.05).toList();
     totalDuration.value = wav.duration;
     for (double d = 0.0; d <= wav.duration; d += 0.1) {
       currentDuration.value = d;

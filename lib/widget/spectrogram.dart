@@ -51,10 +51,10 @@ class SpectrogramPainter extends CustomPainter {
     // canvas.drawRect(rect, paintBg);
 
     final paint = Paint();
-    final cellWidth = size.width / data.capacity;
+    final cellHeight = size.height / data.capacity;
 
     for (final (int index, List<double> item) in data.indexed) {
-      final cellHeight = size.height / item.length;
+      final cellWidth = size.width / item.length;
       for (final (int j, double intensity) in item.indexed) {
         paint.color = getColorForIntensity(intensity); // 색상 결정
 
