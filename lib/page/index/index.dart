@@ -18,8 +18,8 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
     debugPrint("_numFreq: ${controller.spectrogramHorizontalCount}");
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
-      controller.doSTFT(result.files.single.path!);
-      // controller.doSTFT("/root/sample1.wav");
+      // controller.doSTFT(result.files.single.path!);
+      controller.doSTFT("/root/sample1.wav");
     }
   }
 

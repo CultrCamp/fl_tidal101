@@ -122,7 +122,9 @@ class IndexController extends GetxController {
     double chunkLengthInSec = args[4];
     double totalDuration = args[5];
     double currentDuration = 0.0;
-    while (audio.isNotEmpty) {
+    for (;
+        currentDuration <= totalDuration;
+        currentDuration += chunkLengthInSec) {
       var chunked = audio.take(chunkSize).toList(growable: false);
       audio = audio.skip(chunkSize ~/ 2).toList(); //  Make overlap
       stft.stream(chunked, (Float64x2List chunk) {
