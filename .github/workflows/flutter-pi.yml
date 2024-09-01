@@ -12,10 +12,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     container:
-      image: mydockerhubusername/my-custom-image:latest
+      image: seyriz/flutter-pi-sdk:latest
 
     steps:
       - name: Checkout repository
