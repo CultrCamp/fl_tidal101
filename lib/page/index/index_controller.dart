@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -25,15 +26,21 @@ class IndexController extends GetxController {
   final int spectrogramHorizontalCount = 192;
   final int spectrogramVerticalCount = 120;
   final int fps = 10;
+  final int bufferSizeInSec = 30;
   final _random = Random();
 
-  final int chunkSize = 4096;
-  final buckets = 480;
-  STFT? _stft;
+  static const int chunkSize = 2048;
+  static int buckets = 480;
+  static STFT? _stft;
   final totalDuration = 0.0.obs;
   final currentDuration = 0.0.obs;
+  final RxInt bitPerSample = 0.obs;
+  final RxInt samplesPerSecond = 0.obs;
 
-  STFT get stft {
+  Isolate? _fftIsolate;
+  ReceivePort? _receivePort;
+
+  static STFT get stft {
     _stft ??= STFT(chunkSize, Window.hamming(chunkSize));
     return _stft!;
   }
@@ -68,11 +75,56 @@ class IndexController extends GetxController {
     final wav = await Wav.readFile(filePath);
     var audio = _normalizeRmsVolume(wav.toMono(), 0.05).toList();
     totalDuration.value = wav.duration;
-    for (double d = 0.0; d <= wav.duration; d += 0.1) {
-      currentDuration.value = d;
-      var chunked =
-          audio.take(wav.samplesPerSecond ~/ 10).toList(growable: false);
-      audio = audio.skip(wav.samplesPerSecond ~/ 10).toList();
+    bitPerSample.value = wav.format.bitsPerSample;
+    final _samplesPerSecond = wav.samplesPerSecond;
+    samplesPerSecond.value = _samplesPerSecond;
+    buckets = _samplesPerSecond ~/ 100;
+    const chunkLengthInSec = 0.05;
+    buffer.value.capacity = bufferSizeInSec ~/ chunkLengthInSec;
+    final chunkSize = (_samplesPerSecond * chunkLengthInSec).toInt();
+
+    if (_fftIsolate != null) {
+      _cleanupIsolate();
+    }
+    _receivePort = ReceivePort();
+    _fftIsolate = await Isolate.spawn(_fftIsolateEntry, [
+      _receivePort!.sendPort,
+      audio,
+      chunkSize,
+      buckets,
+      chunkLengthInSec,
+      totalDuration.value
+    ]);
+
+    _receivePort!.listen((message) {
+      if (message is List<double>) {
+        buffer.value.add(message);
+      } else if (message is double) {
+        currentDuration.value = message;
+      } else if (message == "done") {
+        _cleanupIsolate();
+      }
+    });
+  }
+
+  void _cleanupIsolate() {
+    _fftIsolate?.kill(priority: Isolate.immediate);
+    _fftIsolate = null;
+    _receivePort?.close();
+    _receivePort = null;
+  }
+
+  static void _fftIsolateEntry(List<dynamic> args) async {
+    SendPort sendPort = args[0];
+    List<double> audio = args[1];
+    int chunkSize = args[2];
+    int buckets = args[3];
+    double chunkLengthInSec = args[4];
+    double totalDuration = args[5];
+    double currentDuration = 0.0;
+    while (audio.isNotEmpty) {
+      var chunked = audio.take(chunkSize).toList(growable: false);
+      audio = audio.skip(chunkSize ~/ 2).toList(); //  Make overlap
       stft.stream(chunked, (Float64x2List chunk) {
         final amp = chunk.discardConjugates().magnitudes();
 
@@ -82,15 +134,19 @@ class IndexController extends GetxController {
           int end = (amp.length * (bucket + 1)) ~/ buckets;
           temp.add(_rms(Float64List.sublistView(amp, start, end)));
         }
-        buffer.value.add(temp);
-      });
-      await Future.delayed(const Duration(milliseconds: 100));
+        sendPort.send(temp);
+      }, chunkSize ~/ 2);
+      await Future.delayed(
+          Duration(milliseconds: (chunkLengthInSec * 1000).toInt()));
+      currentDuration += chunkLengthInSec;
+      sendPort.send(currentDuration);
     }
+    sendPort.send("done");
   }
 
 // Returns a copy of the input audio, with the amplitude adjusted so that the
 // RMS volume of the result is set to the target.
-  Float64List _normalizeRmsVolume(List<double> audio, double target) {
+  static Float64List _normalizeRmsVolume(List<double> audio, double target) {
     double factor = target / _rms(audio);
     final output = Float64List.fromList(audio);
     for (int i = 0; i < audio.length; ++i) {
@@ -99,7 +155,7 @@ class IndexController extends GetxController {
     return output;
   }
 
-  double _rms(List<double> audio) {
+  static double _rms(List<double> audio) {
     if (audio.isEmpty) {
       return 0;
     }
@@ -125,6 +181,7 @@ class IndexController extends GetxController {
   void onClose() {
     // TODO: implement onClose
     // _sampleDataTimer?.cancel();
+    _cleanupIsolate();
     super.onClose();
   }
 }

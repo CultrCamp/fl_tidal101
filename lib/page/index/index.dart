@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:fl_tidal101/page/index/index_controller.dart';
 import 'package:fl_tidal101/widget/spectrogram.dart';
 import 'package:flutter/material.dart';
@@ -15,11 +16,11 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
 
   void _incrementCounter() async {
     debugPrint("_numFreq: ${controller.spectrogramHorizontalCount}");
-    // FilePickerResult? result = await FilePicker.platform.pickFiles();
-    // if (result != null) {
-    //   controller.doSTFT(result.files.single.path!);
-    controller.doSTFT("/root/sample1.wav");
-    // }
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      controller.doSTFT(result.files.single.path!);
+      // controller.doSTFT("/root/sample1.wav");
+    }
   }
 
   @override
@@ -49,13 +50,16 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
       body: Stack(
         children: [
           Center(
-              // Center is a layout widget. It takes a single child and positions it
-              // in the middle of the parent.
-              child: Obx(() => Spectrogram(
-                  data: controller.buffer.value,
-                  intensityColorMap: controller.intensityColorMaps[
-                      controller.intensityColorMapIndex.value],
-                  debug: false))),
+            // Center is a layout widget. It takes a single child and positions it
+            // in the middle of the parent.
+            child: Container(
+                color: Colors.black,
+                child: Obx(() => Spectrogram(
+                    data: controller.buffer.value,
+                    intensityColorMap: controller.intensityColorMaps[
+                        controller.intensityColorMapIndex.value],
+                    debug: false))),
+          ),
           Container(
             color: const Color(0xAAFFFFFF),
             child: Row(
@@ -64,7 +68,10 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
                 Obx(() => Text("${controller.currentFps}fps")),
                 SizedBox.fromSize(size: const Size(50, 50)),
                 Obx(() => Text(
-                    "total: ${controller.totalDuration} current: ${controller.currentDuration}"))
+                    "total: ${controller.totalDuration.toStringAsFixed(2)} current: ${controller.currentDuration.toStringAsFixed(2)}")),
+                SizedBox.fromSize(size: const Size(50, 50)),
+                Obx(() => Text(
+                    "samplates: ${controller.samplesPerSecond} bit: ${controller.bitPerSample} buckets: ${IndexController.buckets} resolution: ${controller.samplesPerSecond / IndexController.buckets}"))
               ],
             ),
           )

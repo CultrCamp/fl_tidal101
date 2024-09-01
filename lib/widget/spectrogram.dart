@@ -1,5 +1,3 @@
-import 'dart:core';
-
 import 'package:fl_tidal101/utils/RingBuffer.dart';
 import 'package:flutter/material.dart';
 
@@ -32,24 +30,20 @@ class SpectrogramPainter extends CustomPainter {
   final VoidCallback onFramePainted;
   final bool debug;
 
-  // 강도에 따른 색상 매핑
-  final Map<double, Color> intensityColorMap;
+  // 색상 매핑을 위한 캐시
+  final List<double> sortedKeys;
+  final List<Color> colors;
 
   SpectrogramPainter(
     this.data, {
     required this.onFramePainted,
-    required this.intensityColorMap,
+    required Map<double, Color> intensityColorMap,
     this.debug = false,
-  });
+  })  : sortedKeys = intensityColorMap.keys.toList()..sort(),
+        colors = intensityColorMap.values.toList();
 
   @override
   void paint(Canvas canvas, Size size) {
-    // final paintBg = Paint()..color = Colors.black; // 배경 색상 설정
-    //
-    // // 전체 화면 크기의 사각형을 만듭니다.
-    // final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    // canvas.drawRect(rect, paintBg);
-
     final paint = Paint();
     final cellHeight = size.height / data.capacity;
 
@@ -60,7 +54,7 @@ class SpectrogramPainter extends CustomPainter {
 
         final rect = Rect.fromLTWH(
           j * cellWidth,
-          (index + 1) * cellHeight, // 시간 축을 아래쪽에서 위쪽으로 그리기
+          (index + 1) * cellHeight,
           cellWidth,
           cellHeight,
         );
@@ -74,31 +68,37 @@ class SpectrogramPainter extends CustomPainter {
 
   // 강도에 따라 색상을 반환하는 함수 (중간값 그라데이션 적용)
   Color getColorForIntensity(double intensity) {
-    final sortedKeys = intensityColorMap.keys.toList()..sort();
+    // 이진 탐색을 통해 중간값을 빠르게 찾음
+    int low = 0;
+    int high = sortedKeys.length - 1;
 
-    // 중간값을 찾기 위한 색상 정의
-    for (int i = 0; i < sortedKeys.length - 1; i++) {
-      double lower = sortedKeys[i];
-      double upper = sortedKeys[i + 1];
+    if (intensity <= sortedKeys[low]) {
+      return colors[low];
+    } else if (intensity >= sortedKeys[high]) {
+      return colors[high];
+    }
 
-      if (intensity >= lower && intensity <= upper) {
-        double t = (intensity - lower) / (upper - lower);
-        return Color.lerp(
-            intensityColorMap[lower], intensityColorMap[upper], t)!;
+    while (low <= high) {
+      int mid = (low + high) >> 1;
+      if (intensity == sortedKeys[mid]) {
+        return colors[mid];
+      } else if (intensity < sortedKeys[mid]) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
       }
     }
 
-    // 강도가 맵의 범위를 벗어난 경우에 대한 처리
-    if (intensity <= sortedKeys.first) {
-      return intensityColorMap[sortedKeys.first]!;
-    } else {
-      return intensityColorMap[sortedKeys.last]!;
-    }
+    // 두 인접한 색상 사이의 비율 계산
+    double lower = sortedKeys[high];
+    double upper = sortedKeys[low];
+    double t = (intensity - lower) / (upper - lower);
+    return Color.lerp(colors[high], colors[low], t)!;
   }
 
   @override
   bool shouldRepaint(covariant SpectrogramPainter oldDelegate) {
-    // 데이터가 변경되었을 때만 다시 그리도록 설정
-    return oldDelegate.data != data;
+    // 데이터를 부분적으로 비교하거나, 변경된 경우에만 true 반환
+    return oldDelegate.data != data || oldDelegate.debug != debug;
   }
 }

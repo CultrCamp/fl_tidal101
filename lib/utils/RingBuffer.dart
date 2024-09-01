@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 class RingBuffer<T> extends ChangeNotifier with Iterable<T> {
-  final List<T?> _buffer;
+  List<T?> _buffer;
   int _writeIndex = 0;
   int _readIndex = 0;
   int _size = 0;
@@ -16,6 +16,10 @@ class RingBuffer<T> extends ChangeNotifier with Iterable<T> {
   int get length => _size;
 
   bool get isFull => _size == capacity;
+
+  set capacity(int newSize) {
+    _buffer = List.from(_buffer)..length = newSize;
+  }
 
   void add(T value) {
     _buffer[_writeIndex] = value;
