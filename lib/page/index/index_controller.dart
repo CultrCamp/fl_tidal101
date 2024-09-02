@@ -24,7 +24,7 @@ class IndexController extends GetxController {
   RxInt intensityColorMapIndex = 0.obs;
   final Rx<RingBuffer<List<double>>> buffer = Rx(RingBuffer(120));
   final int fps = 10;
-  final int bufferSizeInSec = 30;
+  final int bufferSizeInSec = 15;
   final _random = Random();
 
   static const int chunkSize = 2048;
@@ -35,6 +35,9 @@ class IndexController extends GetxController {
   final currentDuration = 0.0.obs;
   final RxInt bitPerSample = 0.obs;
   final RxInt samplesPerSecond = 0.obs;
+
+  DateTime measureStart = DateTime.now();
+  final List<Duration> durations = List.empty(growable: true);
 
   Isolate? _fftIsolate;
   ReceivePort? _receivePort;

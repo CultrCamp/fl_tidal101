@@ -1,26 +1,32 @@
 import 'dart:ui';
 
 import 'package:fl_tidal101/utils/RingBuffer.dart';
+import 'package:fl_tidal101/utils/benchmark_util.dart';
 import 'package:flutter/material.dart';
 
 class Spectrogram extends StatelessWidget {
   final Map<double, Color> intensityColorMap;
   final RingBuffer<List<double>> data;
   final bool debug;
+  final DurationCallback? durationCallback;
 
   const Spectrogram(
       {required this.data,
       this.debug = false,
       required this.intensityColorMap,
+      this.durationCallback,
       super.key});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(double.infinity, double.infinity),
-      painter: SpectrogramPainter(data, onFramePainted: () {
+      painter: SpectrogramPainter(data, onFramePainted: (duration) {
         if (debug) {
           debugPrint("repaint");
+        }
+        if (durationCallback != null) {
+          durationCallback!(duration);
         }
       }, intensityColorMap: intensityColorMap, debug: debug),
     );
@@ -29,7 +35,7 @@ class Spectrogram extends StatelessWidget {
 
 class SpectrogramPainter extends CustomPainter {
   final RingBuffer<List<double>> data;
-  final VoidCallback onFramePainted;
+  final DurationCallback onFramePainted;
   final bool debug;
 
   // 색상 매핑을 위한 캐시
@@ -47,6 +53,7 @@ class SpectrogramPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final start = DateTime.now();
     final paint = Paint()..style = PaintingStyle.fill;
     final boxHeight = size.height / data.capacity;
 
@@ -58,7 +65,8 @@ class SpectrogramPainter extends CustomPainter {
         // 각 상자의 좌표를 계산 (아래쪽이 최신 데이터가 되도록)
         final bottomLeft = Offset(j * boxWidth, i * boxHeight);
         final topLeft = Offset(j * boxWidth, i * boxHeight + boxHeight);
-        final topRight = Offset(j * boxWidth + boxWidth, i * boxHeight + boxHeight);
+        final topRight =
+            Offset(j * boxWidth + boxWidth, i * boxHeight + boxHeight);
         final bottomRight = Offset(j * boxWidth + boxWidth, i * boxHeight);
 
         // 사각형 그리기
@@ -72,7 +80,8 @@ class SpectrogramPainter extends CustomPainter {
       }
     }
 
-    onFramePainted(); // 프레임이 그려질 때마다 호출하여 FPS 계산에 사용
+    final end = DateTime.now();
+    onFramePainted(end.difference(start)); // 프레임이 그려질 때마다 호출하여 FPS 계산에 사용
   }
 
   // 강도에 따라 색상을 반환하는 함수 (중간값 그라데이션 적용)
