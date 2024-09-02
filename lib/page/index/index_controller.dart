@@ -74,42 +74,46 @@ class IndexController extends GetxController {
   }
 
   void doSTFT(String filePath) async {
-    final wav = await Wav.readFile(filePath);
-    debugPrint("wav file loaded");
-    var audio = _normalizeRmsVolume(wav.toMono(), 0.05).toList();
-    totalDuration.value = wav.duration;
-    bitPerSample.value = wav.format.bitsPerSample;
-    final _samplesPerSecond = wav.samplesPerSecond;
-    samplesPerSecond.value = _samplesPerSecond;
-    buckets = _samplesPerSecond ~/ targetResolutionInHz;
-    const chunkLengthInSec = 0.05;
-    buffer.value.capacity = bufferSizeInSec ~/ chunkLengthInSec;
-    final chunkSize = (_samplesPerSecond * chunkLengthInSec).toInt();
+    try {
+      final wav = await Wav.readFile(filePath);
+      debugPrint("wav file loaded");
+      var audio = _normalizeRmsVolume(wav.toMono(), 0.05).toList();
+      totalDuration.value = wav.duration;
+      bitPerSample.value = wav.format.bitsPerSample;
+      final _samplesPerSecond = wav.samplesPerSecond;
+      samplesPerSecond.value = _samplesPerSecond;
+      buckets = _samplesPerSecond ~/ targetResolutionInHz;
+      const chunkLengthInSec = 0.05;
+      buffer.value.capacity = bufferSizeInSec ~/ chunkLengthInSec;
+      final chunkSize = (_samplesPerSecond * chunkLengthInSec).toInt();
 
-    if (_fftIsolate != null) {
-      debugPrint("isolate exists. kill it");
-      _cleanupIsolate();
-    }
-    _receivePort = ReceivePort();
-    _fftIsolate = await Isolate.spawn(_fftIsolateEntry, [
-      _receivePort!.sendPort,
-      audio,
-      chunkSize,
-      buckets,
-      chunkLengthInSec,
-      totalDuration.value
-    ]);
-    debugPrint("fft started");
-
-    _receivePort!.listen((message) {
-      if (message is List<double>) {
-        buffer.value.add(message);
-      } else if (message is double) {
-        currentDuration.value = message;
-      } else if (message == "done") {
+      if (_fftIsolate != null) {
+        debugPrint("isolate exists. kill it");
         _cleanupIsolate();
       }
-    });
+      _receivePort = ReceivePort();
+      _fftIsolate = await Isolate.spawn(_fftIsolateEntry, [
+        _receivePort!.sendPort,
+        audio,
+        chunkSize,
+        buckets,
+        chunkLengthInSec,
+        totalDuration.value
+      ]);
+      debugPrint("fft started");
+
+      _receivePort!.listen((message) {
+        if (message is List<double>) {
+          buffer.value.add(message);
+        } else if (message is double) {
+          currentDuration.value = message;
+        } else if (message == "done") {
+          _cleanupIsolate();
+        }
+      });
+    } catch (e, st) {
+      debugPrintStack(label: "Wav load error: $e", stackTrace: st);
+    }
   }
 
   void _cleanupIsolate() {

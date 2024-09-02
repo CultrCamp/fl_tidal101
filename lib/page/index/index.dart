@@ -63,7 +63,7 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
               // Center is a layout widget. It takes a single child and positions it
               // in the middle of the parent.
               child: Container(
-                  color: Colors.white,
+                  color: Colors.black,
                   child: Obx(() => Column(
                         mainAxisSize: MainAxisSize.max,
                         children: [
