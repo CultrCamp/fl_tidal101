@@ -94,13 +94,17 @@ class SpectrogramImagePainter extends CustomPainter {
   }
 
   void _updateBuffer(Size size) {
-    final boxHeight = size.height / data.capacity;
-    final boxWidth = size.width / data.first.length;
-    buffer = Uint8List(data.capacity * data.first.length * 4);
+    if (data.isNotEmpty) {
+      final boxHeight = size.height / data.capacity;
+      final boxWidth = size.width / data.first.length;
+      buffer = Uint8List(data.capacity * data.first.length * 4);
+    } else {
+      buffer = Uint8List(0);
+    }
 
     int bufferIndex = 0;
-    for (final (int i, List<double> item) in data.indexed) {
-      for (final (int j, double intensity) in item.indexed) {
+    for (List<double> item in data) {
+      for (double intensity in item) {
         final color = getColorForIntensity(intensity);
         buffer[bufferIndex++] = color.red;
         buffer[bufferIndex++] = color.green;

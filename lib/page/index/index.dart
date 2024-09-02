@@ -56,40 +56,62 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-      body: LayoutBuilder(builder: (ctx, constraints) {
-        return Stack(
-          children: [
-            Center(
-              // Center is a layout widget. It takes a single child and positions it
-              // in the middle of the parent.
-              child: Container(
+      body: Container(
+        color: Colors.black,
+        child: LayoutBuilder(builder: (ctx, constraints) {
+          return Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                color: const Color(0xAAFFFFFF),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    SizedBox(
+                      width: 50,
+                      child: Obx(() => Text(
+                          "${controller.currentFps.value.toString().padLeft(3, '0')}fps")),
+                    ),
+                    SizedBox.fromSize(size: const Size(50, 50)),
+                    Obx(() => Text(
+                        "total: ${controller.totalDuration.toStringAsFixed(2)} "
+                        "current: ${controller.currentDuration.toStringAsFixed(2)} "
+                        "samplates: ${controller.samplesPerSecond} "
+                        "bit: ${controller.bitPerSample} "
+                        "buckets: ${IndexController.buckets} "
+                        "resolution: ${controller.samplesPerSecond / IndexController.buckets}")),
+                    const Spacer(),
+                    TextButton(
+                        onPressed: _incrementCounter,
+                        child: const Text("Start"))
+                  ],
+                ),
+              ),
+              SizedBox.fromSize(
+                size: Size.fromHeight(constraints.maxHeight * 0.8),
+                child: Obx(() => SpectrogramImage(
+                      data: controller.buffer.value,
+                      intensityColorMap: controller.intensityColorMaps[
+                          controller.intensityColorMapIndex.value],
+                      debug: false,
+                      durationCallback: (duration) {
+                        var now = DateTime.now();
+                        if (now.difference(controller.measureStart).inSeconds >=
+                            5) {
+                          debugPrint(
+                              "render duration average: ${getDurationAverageInMillis(controller.durations)}ms list: [${printDurationsInMillis(controller.durations)}]");
+                          controller.measureStart = now;
+                          controller.durations.clear();
+                        }
+                        controller.durations.add(duration);
+                      },
+                    )),
+              ),
+              Container(
                   color: Colors.black,
                   child: Obx(() => Column(
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          SizedBox.fromSize(
-                              size: Size.fromHeight(
-                                  constraints.maxHeight * 0.925),
-                              child: SpectrogramImage(
-                                data: controller.buffer.value,
-                                intensityColorMap: controller
-                                        .intensityColorMaps[
-                                    controller.intensityColorMapIndex.value],
-                                debug: false,
-                                durationCallback: (duration) {
-                                  var now = DateTime.now();
-                                  if (now
-                                          .difference(controller.measureStart)
-                                          .inSeconds >=
-                                      30) {
-                                    debugPrint(
-                                        "render duration average: ${getDurationAverageInMillis(controller.durations)}ms list: [${printDurationsInMillis(controller.durations)}]");
-                                    controller.measureStart = now;
-                                    controller.durations.clear();
-                                  }
-                                  controller.durations.add(duration);
-                                },
-                              )),
                           SizedBox.fromSize(
                             size: const Size(10, 10),
                           ),
@@ -98,34 +120,10 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
                                   2) //  Nyquist
                         ],
                       ))),
-            ),
-            Container(
-              color: const Color(0xAAFFFFFF),
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  SizedBox(
-                    width: 50,
-                    child: Obx(() => Text(
-                        "${controller.currentFps.value.toString().padLeft(3, '0')}fps")),
-                  ),
-                  SizedBox.fromSize(size: const Size(50, 50)),
-                  Obx(() => Text(
-                      "total: ${controller.totalDuration.toStringAsFixed(2)} "
-                      "current: ${controller.currentDuration.toStringAsFixed(2)} "
-                      "samplates: ${controller.samplesPerSecond} "
-                      "bit: ${controller.bitPerSample} "
-                      "buckets: ${IndexController.buckets} "
-                      "resolution: ${controller.samplesPerSecond / IndexController.buckets}")),
-                  const Spacer(),
-                  TextButton(
-                      onPressed: _incrementCounter, child: const Text("Start"))
-                ],
-              ),
-            )
-          ],
-        );
-      }),
+            ],
+          );
+        }),
+      ),
       // floatingActionButton: FloatingActionButton(
       //   onPressed: _incrementCounter,
       //   tooltip: 'Increment',
