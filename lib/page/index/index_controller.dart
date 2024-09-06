@@ -29,7 +29,7 @@ class IndexController extends GetxController {
 
   static const int chunkSize = 2048;
   static int buckets = 480;
-  static const int targetResolutionInHz = 250;
+  static const int targetResolutionInHz = 100;
   static STFT? _stft;
   final totalDuration = 0.0.obs;
   final currentDuration = 0.0.obs;

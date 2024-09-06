@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:fl_tidal101/const/routes.dart';
+import 'package:fl_tidal101/common/common_binding.dart';
+import 'package:fl_tidal101/common/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -29,6 +30,7 @@ void main() {
         useMaterial3: true,
       ),
       getPages: pages,
+      initialBinding: CommonBinding(),
       initialRoute: Routes.IndexPage,
       color: Colors.black,
       debugShowCheckedModeBanner: false,

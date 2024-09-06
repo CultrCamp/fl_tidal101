@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:fl_tidal101/common/rf_controller.dart';
 import 'package:fl_tidal101/page/index/index_controller.dart';
 import 'package:fl_tidal101/utils/benchmark_util.dart';
 import 'package:fl_tidal101/widget/frequecy_axis.dart';
@@ -17,6 +18,7 @@ class IndexPage extends StatefulWidget {
 
 class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
   IndexController controller = Get.find();
+  RfService rfService = Get.find();
   Ticker? _ticker;
 
   void _incrementCounter() async {
@@ -72,7 +74,8 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
                       child: Obx(() => Text(
                           "${controller.currentFps.value.toString().padLeft(3, '0')}fps")),
                     ),
-                    SizedBox.fromSize(size: const Size(50, 50)),
+                    SizedBox.fromSize(
+                        size: Size(50, constraints.maxHeight * 0.05)),
                     Obx(() => Text(
                         "total: ${controller.totalDuration.toStringAsFixed(2)} "
                         "current: ${controller.currentDuration.toStringAsFixed(2)} "
@@ -88,38 +91,63 @@ class _IndexState extends State<IndexPage> with SingleTickerProviderStateMixin {
                 ),
               ),
               SizedBox.fromSize(
-                size: Size.fromHeight(constraints.maxHeight * 0.8),
-                child: Obx(() => SpectrogramImage(
-                      data: controller.buffer.value,
-                      intensityColorMap: controller.intensityColorMaps[
-                          controller.intensityColorMapIndex.value],
-                      debug: false,
-                      durationCallback: (duration) {
-                        var now = DateTime.now();
-                        if (now.difference(controller.measureStart).inSeconds >=
-                            5) {
-                          debugPrint(
-                              "render duration average: ${getDurationAverageInMillis(controller.durations)}ms list: [${printDurationsInMillis(controller.durations)}]");
-                          controller.measureStart = now;
-                          controller.durations.clear();
-                        }
-                        controller.durations.add(duration);
-                      },
-                    )),
-              ),
-              Container(
-                  color: Colors.black,
-                  child: Obx(() => Column(
+                size: Size(constraints.maxWidth, constraints.maxHeight * 0.5),
+                child: Container(
+                  color: Colors.amber,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
                         mainAxisSize: MainAxisSize.max,
-                        children: [
-                          SizedBox.fromSize(
-                            size: const Size(10, 10),
-                          ),
-                          FrequencyAxis(
-                              maxFrequency: controller.samplesPerSecond.value ~/
-                                  2) //  Nyquist
-                        ],
-                      ))),
+                        children: [Text("VFO: ${rfService.vfoKh}")],
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox.fromSize(
+                  size: Size.fromHeight(constraints.maxHeight * 0.4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: Obx(() => SpectrogramImage(
+                              data: controller.buffer.value,
+                              intensityColorMap: controller.intensityColorMaps[
+                                  controller.intensityColorMapIndex.value],
+                              debug: false,
+                              durationCallback: (duration) {
+                                var now = DateTime.now();
+                                if (now
+                                        .difference(controller.measureStart)
+                                        .inSeconds >=
+                                    5) {
+                                  debugPrint(
+                                      "render duration average: ${getDurationAverageInMillis(controller.durations)}ms list: [${printDurationsInMillis(controller.durations)}]");
+                                  controller.measureStart = now;
+                                  controller.durations.clear();
+                                }
+                                controller.durations.add(duration);
+                              },
+                            )),
+                      ),
+                      Container(
+                          color: Colors.black,
+                          child: Obx(() => Column(
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  SizedBox.fromSize(
+                                    size: const Size(10, 10),
+                                  ),
+                                  FrequencyAxis(
+                                      numLabels: 10,
+                                      maxFrequency:
+                                          controller.samplesPerSecond.value ~/
+                                              2) //  Nyquist
+                                ],
+                              ))),
+                    ],
+                  )),
             ],
           );
         }),
