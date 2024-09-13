@@ -19,3 +19,14 @@ extension NumberExtensions on num {
     }
   }
 }
+
+extension DoubleExtensions on double {
+  int compress(
+      {int targetMin = 0,
+      int targetMax = 0xFFFFFFFF,
+      double inputMin = 0.0,
+      double inputMax = 1.0}) {
+    var procVar = this > inputMax ? 1.0 : this;
+    return (procVar * targetMax).toInt();
+  }
+}
