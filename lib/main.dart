@@ -1,12 +1,19 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:fl_tidal101/const/routes.dart';
+import 'package:fl_tidal101/messages/generated.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rinf/rinf.dart';
 
-void main() {
-  runZonedGuarded(() {
+void main() async {
+  runZonedGuarded(() async {
+    await initializeRust(assignRustSignal);
     WidgetsFlutterBinding.ensureInitialized();
+    FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+    Size screenSize = view.physicalSize;
+    debugPrint("screenSize: w: ${screenSize.width} h: ${screenSize.height}");
     runApp(GetMaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
